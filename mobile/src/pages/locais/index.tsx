@@ -13,6 +13,7 @@ import {
 import Constants from "expo-constants";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import MapView, { Marker } from "react-native-maps";
+
 import * as Location from "expo-location";
 
 import api from "../../services/api";
@@ -30,8 +31,8 @@ interface locaisInterface {
   longitude: number;
 }
 interface filtro {
-  estado: string;
-  cidade: string;
+  ufSelecionado: string;
+  cidadeSelecionada: string;
 }
 
 const Locais = () => {
@@ -54,6 +55,7 @@ const Locais = () => {
   }, []);
 
   useEffect(() => {
+    console.log(routesParams)
     const loadPosicao = async () => {
       const { status } = await Location.requestPermissionsAsync();
       if (status !== "granted") {
@@ -73,13 +75,14 @@ const Locais = () => {
       api
         .get("Locais", {
           params: {
-            cidade: routesParams.cidade,
-            uf: routesParams.estado,
+            cidade: routesParams.cidadeSelecionada,
+            uf: routesParams.ufSelecionado,
             itens: itensSelecionados,
           },
         })
         .then((res) => {
           if (posicaoInicial[0] !== 0) {
+            console.log(res.data)
             setLocais(res.data);
           }
         });
@@ -121,7 +124,7 @@ const Locais = () => {
         <Text style={styles.description}>
           Encontre no mapa um ponto de coleta.
         </Text>
-
+      
         <View style={styles.mapContainer}>
           {posicaoInicial[0] !== 0 && (
             <MapView

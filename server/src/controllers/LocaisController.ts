@@ -69,6 +69,7 @@ export default class LocaisController {
   }
 
   async index(req: Request, res: Response) {
+    console.log(req.query)
     const { cidade, uf, itens } = req.query;
     const parsedItens = String(itens)
       .split(",")

@@ -12,6 +12,17 @@ import {
 import { RectButton } from "react-native-gesture-handler";
 import { Feather as Icon } from "@expo/vector-icons"; // icones prontos no react native
 import { useNavigation } from "@react-navigation/native";
+import SelectPicker from "react-native-picker-select";
+
+import axios from "axios";
+
+interface ufInterface {
+  sigla: string;
+}
+interface cidadeInterface {
+  nome: string;
+}
+
 //#region ANOTACOES - componentes basicos
 /*
 TODO COMPONENTE TEM style COMO ATRIBUTO
@@ -32,13 +43,49 @@ Touchable: botoes infinitos com infinitas funcionalidades
 const Home = () => {
   const Navigation = useNavigation();
 
-  const [estado, setEstado] = useState("");
-  const [cidade, setCidade] = useState("");
+  const [ufs, setUfs] = useState<string[]>([]);
+  const [cidades, setCidades] = useState<string[]>([]);
+  const [ufSelecionado, setUfSelecionado] = useState("");
+  const [cidadeSelecionada, setCidadeSelecionada] = useState("");
+
+  useEffect(() => {
+    // get UFs
+    axios
+      .get<ufInterface[]>(
+        "https://servicodados.ibge.gov.br/api/v1/localidades/estados"
+      )
+      .then((res) => {
+        const ufSigla = res.data.map((uf) => uf.sigla);
+        setUfs(ufSigla);
+      });
+  }, []);
+  useEffect(() => {
+    //get cidades by UF
+    if (ufSelecionado === "0") {
+      return;
+    }
+    axios
+      .get<cidadeInterface[]>(
+        `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${ufSelecionado}/municipios`
+      )
+      .then((res) => {
+        const cidadesNomes = res.data.map((cidade) => cidade.nome);
+        setCidades(cidadesNomes);
+      });
+  }, [ufSelecionado]);
 
   const handleNavToLocais = () => {
-    Navigation.navigate("Locais", { estado, cidade });
+    Navigation.navigate("Locais", { ufSelecionado, cidadeSelecionada });
   };
-
+  const handleUfSelecionado = (value: string) => {
+    setUfSelecionado(value);
+    console.log(ufSelecionado);
+  };
+  const handleCidadeSelecionado = (value: string) => {
+    setCidadeSelecionada(value);
+    console.log(cidadeSelecionada);
+    //atualiza cidades de acordo co UF
+  };
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -63,22 +110,34 @@ const Home = () => {
         </View>
 
         <View style={styles.footer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Selecione o estado"
-            value={estado}
-            onChangeText={setEstado}
-            maxLength={2}
-            autoCapitalize={"characters"}
-            autoCorrect={false}
-          ></TextInput>
-          <TextInput
-            style={styles.input}
-            placeholder="Selecione a cidade"
-            value={cidade}
-            onChangeText={setCidade}
-            autoCorrect={false}
-          ></TextInput>
+          <SelectPicker
+            placeholder={{
+              label: "Selecione o estado",
+              value: ufSelecionado,
+              color: "#9EA0A4",
+            }}
+            items={ufs.map((uf) => ({ label: uf, value: uf }))}
+            onValueChange={(value) => {
+              handleUfSelecionado(value);
+            }}
+            style={pickerSelectStyles}
+            // value={ufSelecionado}
+            useNativeAndroidPickerStyle={false}
+          />
+          <SelectPicker
+            placeholder={{
+              label: "Selecione a cidade",
+              value: cidadeSelecionada,
+              color: "#9EA0A4",
+            }}
+            items={cidades.map((cidade) => ({ label: cidade, value: cidade }))}
+            onValueChange={(value) => {
+              handleCidadeSelecionado(value);
+            }}
+            style={pickerSelectStyles}
+            // value={cidadeSelecionada}
+            useNativeAndroidPickerStyle={false}
+          />
 
           <RectButton style={styles.button} onPress={handleNavToLocais}>
             <View style={styles.buttonIcon}>
@@ -160,5 +219,34 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontFamily: "Roboto_500Medium",
     fontSize: 16,
+  },
+});
+
+const pickerSelectStyles = StyleSheet.create({
+  inputIOS: {
+    height: 60,
+    backgroundColor: "#FFF",
+    fontSize: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderWidth: 0.5,
+    borderColor: "purple",
+    borderRadius: 10,
+    marginBottom: 8,
+    color: "black",
+    paddingRight: 30, // to ensure the text is never behind the icon
+  },
+  inputAndroid: {
+    height: 60,
+    backgroundColor: "#FFF",
+    fontSize: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderWidth: 0.5,
+    borderColor: "#34CB79",
+    borderRadius: 10,
+    marginBottom: 8,
+    color: "black",
+    paddingRight: 30, // to ensure the text is never behind the icon
   },
 });

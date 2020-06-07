@@ -3,6 +3,7 @@ import { Link, useHistory } from "react-router-dom";
 import { FiArrowLeft } from "react-icons/fi";
 import { Map, TileLayer, Marker, Popup } from "react-leaflet";
 import { LeafletMouseEvent } from "leaflet";
+import Modal from "react-modal";
 
 import "./style.css";
 import logo from "../../assets/logo.svg";
@@ -36,12 +37,13 @@ const CriarPonto = () => {
     [number, number]
   >([0, 0]);
   const [ufs, setUfs] = useState<string[]>([]);
-  const [ufSelecionado, setUfSelecionado] = useState("0");
   const [cidades, setCidades] = useState<string[]>([]);
+  const [ufSelecionado, setUfSelecionado] = useState("0");
   const [cidadeSelecionada, setCidadeSelecionada] = useState("0");
   const [dadosForm, setDadosForm] = useState({ nome: "", email: "", wpp: "" });
   const [itensSelecionados, setItensSelecionados] = useState<number[]>([]);
   const [arquivoSelec, setArquivoSelec] = useState<File>();
+  const [modalIsOpen, setIsOpen] = React.useState(false);
 
   useEffect(() => {
     api.get("itens").then((res) => {
@@ -114,8 +116,6 @@ const CriarPonto = () => {
   const handleCadastrar = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    console.log(arquivoSelec);
-
     const { nome, email, wpp } = dadosForm;
     const uf = ufSelecionado;
     const cidade = cidadeSelecionada;
@@ -137,8 +137,8 @@ const CriarPonto = () => {
     }
 
     const resposta = await api.post("Locais", data);
-    alert(resposta.status + resposta.statusText);
-    history.push("/");
+
+    setIsOpen(true);
   };
 
   return (
@@ -263,10 +263,38 @@ const CriarPonto = () => {
 
         <button type="submit">Cadastrar ponto de coleta</button>
       </form>
+      <Modal
+        isOpen={modalIsOpen}
+        style={customStyles}
+        contentLabel="Cadastrado com sucesso"
+      >
+        <p>
+          Ponto de coleta cadastrado <br />
+          com sucesso
+        </p>
+        <button
+          onClick={() => {
+            setIsOpen(false);
+            history.push("/");
+          }}
+        >
+          Voltar a tela inicial
+        </button>
+      </Modal>
     </div>
   );
 };
-
 export default CriarPonto;
+
+const customStyles = {
+  content: {
+    top: "50%",
+    left: "50%",
+    right: "auto",
+    bottom: "auto",
+    marginRight: "-50%",
+    transform: "translate(-50%, -50%)",
+  },
+};
 
 //https://twitter.com/TittiesTL/status/1268628414425993216
